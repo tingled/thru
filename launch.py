@@ -1,7 +1,11 @@
 import boto.ec2
 import json
+import os
+import psutil
 import requests
+import subprocess
 
+from time import sleep
 
 class Shepherd(object):
     def __init__(self, conf_file='settings.json'):
@@ -9,6 +13,9 @@ class Shepherd(object):
         self.settings = self._load_conf()
         self.conn = self._load_conn()
         self.instance = self.get_instance()
+
+    def __getattr__(self, name):
+        return self.settings.get(name)
 
     def _load_conf(self):
         return json.load(open(self.conf_file, 'r'))
@@ -52,8 +59,8 @@ class Shepherd(object):
 
         assert sg.authorize(
             ip_protocol='tcp',
-            to_port=self.settings['port'],
-            from_port=self.settings['port'],
+            to_port=self.remote_port,
+            from_port=self.remote_port,
             cidr_ip=cur_ip
         )
 
@@ -65,9 +72,23 @@ class Shepherd(object):
             cidr_ip=cur_ip
         )
 
-    def dig_tunnel(self):
-        pass
+    def _ssh_login_str(self):
+        return '{}@{}'.format(self.remote_user, self.instance.ip_address)
 
+    def dig_tunnel(self):
+        port_str = '{}:{}:{}'.format(self.local_port, self.local_host, self.remote_port)
+        cred_str = self._ssh_login_str()
+        cmd = ['ssh', '-L', port_str, '-N', '-i', self.pem_file, cred_str]
+        return subprocess.Popen(cmd, preexec_fn=os.setpgrp)
+    
+    def kill_tunnel(self):
+        cred_str = self._ssh_login_str()
+        for p in psutil.process_iter():
+            if p.name() == 'ssh' and p.cmdline()[-1] == cred_str:
+                p.terminate()
 
 shep = Shepherd()
-shep.swap_rules(shep.instance)
+# shep.swap_rules(shep.instance)
+# proc = shep.dig_tunnel()
+# shep.kill_tunnel()
+
