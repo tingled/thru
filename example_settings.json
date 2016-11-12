@@ -1,0 +1,11 @@
+{
+    "ami_image_id": "",
+    "security_group": "",
+    "instance_type": "",
+    "region": "",
+    "local_port": ,
+    "local_host": "",
+    "remote_port": "",
+    "remote_user": "",
+    "pem_file": ""
+}
