@@ -140,7 +140,7 @@ class Shepherd(object):
 
 def init_logging(args):
     logger = logging.getLogger(__name__)
-    logger.setLevel(logging.WARNING)
+    logger.setLevel(logging.INFO)
     log_format = "%(asctime)s -  %(message)s"
     formatter = logging.Formatter(log_format)
     level = logging.INFO
